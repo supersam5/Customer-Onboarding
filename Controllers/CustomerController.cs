@@ -26,18 +26,36 @@ namespace Customer_Onboarding.Controllers
 
         // GET: api/<CustomersController>
         [HttpGet]
-        public IEnumerable<string> Get()
+        public IActionResult Get()
         {
-            return new string[] { "value1", "value2" };
+            var products = _CustomerRepository.GetCustomers();
+            return new OkObjectResult(products);
         }
 
 
         // POST api/<CustomerController>
         [HttpPost]
-        public void Post([FromBody] Customer Customer)
+        public async Task<IActionResult>  Post([FromBody] Customer Customer)
         {
-
+            Task<bool> verified;
+            
+            
+            if (ModelState.IsValid || _CustomerRepository.checklga(Customer.StateId, Customer.LocalGovtId))
+            {
+                verified = _CustomerRepository.VerifyCustomer(Customer.Phone);
+                _CustomerRepository.AddCustomer(Customer);
+                if (await verified == true) {
+                Customer.IsConfirmed = true;
+                _CustomerRepository.UpdateCustomer(Customer);
+                }
+                return Ok();
+            }
+            else
+            {
+                return StatusCode(405);
+            }
         }
+        
 
         
     }
